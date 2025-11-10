@@ -483,6 +483,109 @@ Starting Application:
 
 The application will start on http://localhost:8501
 
+Testing with Pytest:
+   pytest tests.py -v
+
+Run specific test:
+   pytest tests.py::test_property_valuation_calculation -v
+
+Run with output:
+   pytest tests.py -v -s
+
+
+TESTING
+=======
+
+Test Framework: pytest
+Test File: tests.py
+Total Test Cases: 10
+
+The system includes a comprehensive pytest test suite covering all core functionality.
+
+Test Cases:
+
+1. test_property_valuation_calculation
+   Purpose: Tests base property valuation for urban location
+   Validates: Valuation returns numeric value, positive, less than 1,000,000
+   Input: Property with 2500 sqft, urban location, good condition
+   Expected: Valid numeric valuation result
+
+2. test_input_validation_accepts_valid_data
+   Purpose: Validates that correct property data is accepted
+   Input: Complete property data with all valid fields
+   Expected: is_valid returns True, zero errors
+
+3. test_input_validation_rejects_invalid_bedrooms
+   Purpose: Validates that invalid bedroom count is rejected
+   Input: Property with 50 bedrooms (unrealistic)
+   Expected: is_valid returns False, validation errors generated
+
+4. test_roi_and_payback_period_calculation
+   Purpose: Tests ROI percentage and payback period calculations
+   Input: Annual return of 20000 on 300000 valuation
+   Expected: Both values are positive floats with valid calculations
+
+5. test_risk_level_assessment_for_property
+   Purpose: Tests risk level calculation for property characteristics
+   Input: Urban location, good condition, 15 years old
+   Expected: Returns valid risk level from (low, low-moderate, moderate, moderate-high, high)
+
+6. test_confidence_score_generation_within_range
+   Purpose: Tests confidence score generation within expected range
+   Input: Min score 0.82, max score 0.98
+   Expected: Float value between 0.82 and 0.98
+
+7. test_complete_property_analysis_pipeline
+   Purpose: Tests complete property analysis with mock engine
+   Input: Full property data with address, features, condition
+   Expected: Analysis with status success, all required sections
+
+8. test_feedback_submission_and_retrieval
+   Purpose: Tests human feedback submission and retrieval workflow
+   Input: Feedback for property with analyst name and approval type
+   Expected: Feedback record with submitted status, can be retrieved
+
+9. test_analysis_validation_structure
+   Purpose: Tests analysis validation with proper structure
+   Input: Valid analysis dictionary with all required sections
+   Expected: Validation passes with no issues
+
+10. test_market_analysis_and_comparable_generation
+    Purpose: Tests market analysis and comparable properties generation
+    Input: Base price of 300000
+    Expected: 3 comparable properties generated, market trend returned
+
+Running All Tests:
+   pytest tests.py -v
+
+Expected Output:
+   test_property_valuation_calculation PASSED
+   test_input_validation_accepts_valid_data PASSED
+   test_input_validation_rejects_invalid_bedrooms PASSED
+   test_roi_and_payback_period_calculation PASSED
+   test_risk_level_assessment_for_property PASSED
+   test_confidence_score_generation_within_range PASSED
+   test_complete_property_analysis_pipeline PASSED
+   test_feedback_submission_and_retrieval PASSED
+   test_analysis_validation_structure PASSED
+   test_market_analysis_and_comparable_generation PASSED
+
+   10 passed in 0.XX seconds
+
+Test Requirements:
+   pytest>=7.0
+
+Install Testing Dependencies:
+   pip install pytest
+
+Test Coverage:
+- Unit tests for calculation functions
+- Input validation tests
+- Helper function tests
+- Integration tests for complete analysis pipeline
+- Human intervention workflow tests
+- Data structure validation tests
+
 
 APPLICATION OUTPUT
 ==================

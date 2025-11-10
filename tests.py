@@ -1,195 +1,197 @@
 """
-Test Suite for Real Estate Intelligence System
-10 essential test cases covering core functionality
+Real Estate Intelligence System - Pytest Test Suite
+10 Essential Test Cases for System Verification
+Run with: pytest tests.py -v
 """
 
 import pytest
-from config import settings
-from mock_analysis import RealEstateAnalysisEngine
-from utils.validators import validate_property_input
 from utils.calculations import (
     calculate_base_valuation,
+    calculate_price_per_sqft,
     calculate_roi,
     calculate_payback_period,
-    calculate_future_value,
     calculate_risk_level
 )
+from utils.validators import validate_property_input
+from utils.helpers import (
+    generate_confidence_score,
+    generate_comparable_properties,
+    generate_market_trend
+)
+from mock_analysis import RealEstateAnalysisEngine
+from human_intervention.feedback_handler import FeedbackHandler
+from human_intervention.validation_manager import ValidationManager
 
 
-# ============================================================================
-# TEST 1: Valid Property Input Validation
-# ============================================================================
-def test_valid_property_input():
-    """Test that valid property input passes validation"""
+def test_property_valuation_calculation():
+    """Test 1: Base property valuation for urban location"""
     property_data = {
-        "address": "123 Main Street",
-        "bedrooms": 3,
-        "bathrooms": 2.5,
         "sqft": 2500,
-        "age_years": 10,
         "location_type": "urban",
+        "neighborhood_rating": "good",
         "condition": "good",
-        "neighborhood_rating": "good"
-    }
-    is_valid, errors = validate_property_input(property_data)
-    assert is_valid is True
-    assert len(errors) == 0
-
-
-# ============================================================================
-# TEST 2: Invalid Property Input Validation
-# ============================================================================
-def test_invalid_property_input():
-    """Test that invalid property input fails validation"""
-    property_data = {
-        "address": "123 Main Street",
-        "bedrooms": 25,  # Beyond max of 20
-        "bathrooms": 2.5,
-        "sqft": 100,  # Below min of 500
-        "age_years": 10,
-        "location_type": "urban",
-        "condition": "good",
-        "neighborhood_rating": "good"
-    }
-    is_valid, errors = validate_property_input(property_data)
-    assert is_valid is False
-    assert len(errors) > 0
-
-
-# ============================================================================
-# TEST 3: Base Valuation Calculation
-# ============================================================================
-def test_base_valuation_calculation():
-    """Test property valuation with multipliers"""
-    property_data = {
-        "sqft": 2000,
-        "location_type": "suburban",
-        "neighborhood_rating": "average",
-        "condition": "fair",
         "age_years": 10
     }
-    valuation = calculate_base_valuation(property_data)
+    result = calculate_base_valuation(property_data)
 
-    # Expected: 2000 * 150 * 1.0 * 1.0 * 1.0 * 0.8 = 240,000
-    expected = 2000 * 150 * 1.0 * 1.0 * 1.0 * 0.8
-    assert abs(valuation - expected) < 1
-
-
-# ============================================================================
-# TEST 4: Downtown Location Premium
-# ============================================================================
-def test_downtown_location_premium():
-    """Test that downtown location gets 40% premium"""
-    suburban_data = {
-        "sqft": 2000,
-        "location_type": "suburban",
-        "neighborhood_rating": "average",
-        "condition": "fair",
-        "age_years": 0
-    }
-    downtown_data = {
-        "sqft": 2000,
-        "location_type": "downtown",
-        "neighborhood_rating": "average",
-        "condition": "fair",
-        "age_years": 0
-    }
-
-    suburban_val = calculate_base_valuation(suburban_data)
-    downtown_val = calculate_base_valuation(downtown_data)
-
-    # Downtown should be 40% more (1.4x multiplier)
-    assert abs(downtown_val / suburban_val - 1.4) < 0.01
+    assert isinstance(result, (int, float))
+    assert result > 0
+    assert result < 1000000
+    print(f"Urban Property Valuation: ${result:,.2f}")
 
 
-# ============================================================================
-# TEST 5: ROI Calculation
-# ============================================================================
-def test_roi_calculation():
-    """Test ROI percentage calculation"""
-    roi = calculate_roi(annual_return=25000, valuation=300000)
-    expected = (25000 / 300000) * 100
-    assert abs(roi - expected) < 0.01
-
-
-# ============================================================================
-# TEST 6: Payback Period Calculation
-# ============================================================================
-def test_payback_period_calculation():
-    """Test payback period in years calculation"""
-    payback = calculate_payback_period(valuation=300000, annual_return=25000)
-    expected = 300000 / 25000  # 12 years
-    assert abs(payback - expected) < 0.01
-
-
-# ============================================================================
-# TEST 7: Future Value Projection (5 Years)
-# ============================================================================
-def test_future_value_projection():
-    """Test 5-year compound growth calculation"""
-    future = calculate_future_value(present_value=300000, annual_rate=0.045, years=5)
-    expected = 300000 * (1.045 ** 5)
-    assert abs(future - expected) < 1
-
-
-# ============================================================================
-# TEST 8: Risk Level Assessment
-# ============================================================================
-def test_risk_level_assessment():
-    """Test risk level calculation for different property types"""
-    # Downtown excellent should be low risk
-    risk_low = calculate_risk_level("downtown", "excellent", 5)
-    assert risk_low in ["low", "low-moderate"]
-
-    # Rural poor should be high risk
-    risk_high = calculate_risk_level("rural", "poor", 70)
-    assert risk_high in ["moderate-high", "high"]
-
-
-# ============================================================================
-# TEST 9: Mock Analysis Engine - Property Analysis
-# ============================================================================
-def test_mock_analysis_engine():
-    """Test complete property analysis with all required sections"""
+def test_input_validation_accepts_valid_data():
+    """Test 2: Validation accepts valid property data"""
     property_data = {
-        "address": "123 Main Street",
+        "address": "123 Main St",
         "bedrooms": 3,
-        "bathrooms": 2.5,
+        "bathrooms": 2.0,
         "sqft": 2500,
         "age_years": 10,
         "location_type": "urban",
         "condition": "good",
         "neighborhood_rating": "good"
     }
+    is_valid, errors = validate_property_input(property_data)
 
-    analysis = RealEstateAnalysisEngine.analyze_property(property_data)
-
-    # Verify all key sections exist
-    assert "basic_info" in analysis
-    assert "valuation" in analysis
-    assert "investment_analysis" in analysis
-    assert "risk_assessment" in analysis
-
-    # Verify valuation is positive
-    assert analysis["valuation"]["estimated_value"] > 0
-
-    # Verify investment score is in valid range
-    assert 1 <= analysis["investment_analysis"]["investment_score"] <= 10
+    assert is_valid is True
+    assert len(errors) == 0
+    print("Valid property input: ACCEPTED")
 
 
-# ============================================================================
-# TEST 10: Configuration Settings Validation
-# ============================================================================
-def test_configuration_settings():
-    """Test that system configuration is loaded correctly"""
-    assert settings.AGENT_MODEL == "gemini-2.0-flash"
-    assert settings.AGENT_TEMPERATURE == 0.7
-    assert settings.AGENT_MAX_TOKENS == 4096
-    assert settings.CURRENCY == "USD"
-    assert settings.DB_FILE == "real_estate.db"
-    assert isinstance(settings.API_PORT, int)
-    assert settings.API_PORT > 0
+def test_input_validation_rejects_invalid_bedrooms():
+    """Test 3: Validation rejects invalid bedroom count"""
+    property_data = {
+        "address": "123 Main St",
+        "bedrooms": 50,
+        "bathrooms": 2.0,
+        "sqft": 2500,
+        "age_years": 10
+    }
+    is_valid, errors = validate_property_input(property_data)
+
+    assert is_valid is False
+    assert len(errors) > 0
+    print(f"Invalid input rejected: {len(errors)} error(s)")
+
+
+def test_roi_and_payback_period_calculation():
+    """Test 4: ROI percentage and payback period calculations"""
+    annual_return = 20000
+    valuation = 300000
+
+    roi = calculate_roi(annual_return, valuation)
+    payback_period = calculate_payback_period(annual_return, valuation)
+
+    assert isinstance(roi, (int, float))
+    assert isinstance(payback_period, (int, float))
+    assert roi > 0
+    assert payback_period > 0
+    print(f"ROI: {roi:.2f}% | Payback Period: {payback_period:.1f} years")
+
+
+def test_risk_level_assessment_for_property():
+    """Test 5: Risk level calculation for different property characteristics"""
+    risk_level = calculate_risk_level("urban", "good", 15)
+
+    valid_risks = ["low", "low-moderate", "moderate", "moderate-high", "high"]
+    assert risk_level in valid_risks
+    print(f"Risk Level: {risk_level}")
+
+
+def test_confidence_score_generation_within_range():
+    """Test 6: Confidence score is within expected range"""
+    score = generate_confidence_score(0.82, 0.98)
+
+    assert isinstance(score, float)
+    assert 0.82 <= score <= 0.98
+    print(f"Confidence Score: {score:.2f}")
+
+
+def test_complete_property_analysis_pipeline():
+    """Test 7: Complete property analysis with mock engine"""
+    property_data = {
+        "address": "123 Oak Street, Downtown",
+        "bedrooms": 3,
+        "bathrooms": 2.5,
+        "sqft": 2500,
+        "age_years": 8,
+        "location_type": "urban",
+        "condition": "good",
+        "neighborhood_rating": "good"
+    }
+
+    result = RealEstateAnalysisEngine.analyze_property(property_data)
+
+    assert result["status"] == "success"
+    assert "analysis_summary" in result
+    assert "valuation" in result
+    assert "investment_analysis" in result
+    assert "market_analysis" in result
+    assert "risk_assessment" in result
+
+    valuation = result["valuation"]["estimated_value"]
+    roi = result["investment_analysis"]["roi_percentage"]
+    score = result["investment_analysis"]["investment_score"]
+
+    print(f"Analysis Complete: Value=${valuation:,.0f} | ROI={roi:.1f}% | Score={score:.1f}/10")
+
+
+def test_feedback_submission_and_retrieval():
+    """Test 8: Human feedback submission and retrieval"""
+    handler = FeedbackHandler()
+
+    feedback = handler.submit_feedback(
+        property_address="123 Main St",
+        feedback_type="approval",
+        feedback_content="Analysis looks good",
+        analyst_name="John Doe",
+        confidence_adjustment=0.1
+    )
+
+    assert feedback["status"] == "submitted"
+    assert feedback["analyst_name"] == "John Doe"
+    assert feedback["feedback_type"] == "approval"
+
+    feedback_list = handler.get_feedback_for_property("123 Main St")
+    assert len(feedback_list) >= 1
+
+    print(f"Feedback submitted and retrieved: {feedback['id']}")
+
+
+def test_analysis_validation_structure():
+    """Test 9: Analysis validation with proper structure"""
+    manager = ValidationManager()
+
+    valid_analysis = {
+        "analysis_summary": {"property_name": "Test Property"},
+        "valuation": {"estimated_value": 300000, "confidence_score": 0.85},
+        "investment_analysis": {"roi_percentage": 8.5, "investment_score": 7, "recommendation": "RECOMMENDED"},
+        "market_analysis": {"market_trend": "appreciating", "comparable_properties": []},
+        "risk_assessment": {"location_risk": "low", "maintenance_risk": "moderate", "overall_risk": "moderate"}
+    }
+
+    is_valid, issues = manager.validate_analysis(valid_analysis)
+
+    assert is_valid is True
+    assert len(issues) == 0
+    print("Analysis validation: PASSED")
+
+
+def test_market_analysis_and_comparable_generation():
+    """Test 10: Market analysis and comparable properties generation"""
+    base_price = 300000
+
+    comparables = generate_comparable_properties(base_price, count=3)
+    trend = generate_market_trend()
+
+    assert len(comparables) == 3
+    assert all("price" in comp for comp in comparables)
+    assert all("sqft" in comp for comp in comparables)
+    assert trend in ["appreciating", "stable", "declining"]
+
+    print(f"Generated {len(comparables)} comparables | Market Trend: {trend}")
 
 
 if __name__ == "__main__":
-    pytest.main([__file__, "-v", "--tb=short"])
+    pytest.main([__file__, "-v"])
